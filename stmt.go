@@ -2,8 +2,8 @@ package main
 
 type StmtType int
 const (
-	StmtTypePrintStmt StmtType = iota
-	StmtTypeExpressionStmt
+	StmtTypeExpressionStmt StmtType = iota
+	StmtTypePrintStmt
 )
 
 type Stmt interface {

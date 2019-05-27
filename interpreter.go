@@ -33,7 +33,7 @@ func (i *Interpreter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, error)
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr *LiteralExpr) (interface{}, error) {
-	return expr.Value.Value(), nil
+	return expr.Value, nil
 }
 
 func (i *Interpreter) VisitUnaryExpr(expr *UnaryExpr) (interface{}, error) {

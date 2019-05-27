@@ -129,19 +129,15 @@ func (p *Parser) primary() (Expr, error) {
 	switch {
 	case p.match(False):
 		return &LiteralExpr{
-			Value: &LiteralValueBool{
-				BoolValue: false,
-			},
+			Value: false,
 		}, nil
 	case p.match(True):
 		return &LiteralExpr{
-			Value: &LiteralValueBool{
-				BoolValue: true,
-			},
+			Value: true,
 		}, nil
 	case p.match(Nil):
 		return &LiteralExpr{
-			Value: &LiteralValueNil{},
+			Value: nil,
 		}, nil
 	case p.match(Number, String):
 		return &LiteralExpr{

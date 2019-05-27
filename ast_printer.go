@@ -11,7 +11,7 @@ func (a *AstPrinter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, error) 
 }
 
 func (a *AstPrinter) VisitLiteralExpr(expr *LiteralExpr) (interface{}, error) {
-	return fmt.Sprintf("%v", expr.Value.Value()), nil
+	return fmt.Sprintf("%v", expr.Value), nil
 }
 
 func (a *AstPrinter) VisitUnaryExpr(expr *UnaryExpr) (interface{}, error) {

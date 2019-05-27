@@ -7,7 +7,7 @@ import (
 type Token struct {
 	Type TokenType
 	Lexeme string
-	Literal LiteralValue
+	Literal interface{}
 	Line int
 }
 

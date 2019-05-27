@@ -119,7 +119,7 @@ func (s *Scanner) addToken(tokenType TokenType) {
 	s.addTokenValue(tokenType, nil)
 }
 
-func (s *Scanner) addTokenValue(tokenType TokenType, literal LiteralValue) {
+func (s *Scanner) addTokenValue(tokenType TokenType, literal interface{}) {
 	text := s.Source[s.Start:s.Current]
 	s.Tokens = append(s.Tokens, &Token{
 		Type: tokenType,
@@ -171,7 +171,7 @@ func (s *Scanner) string() {
 	s.advance()
 
 	value := s.Source[s.Start+1:s.Current-1]
-	s.addTokenValue(String, &LiteralValueString{StringValue: value})
+	s.addTokenValue(String, value)
 }
 
 func (s *Scanner) number() {
@@ -191,7 +191,7 @@ func (s *Scanner) number() {
 	if err != nil {
 		lox.errorLine(s.Line, "Ivalid number.")
 	}
-	s.addTokenValue(Number, &LiteralValueNumber{NumberValue: value})
+	s.addTokenValue(Number, value)
 }
 
 func (s *Scanner) identifier() {
