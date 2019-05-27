@@ -130,13 +130,13 @@ func (p *Parser) primary() (Expr, error) {
 	case p.match(False):
 		return &LiteralExpr{
 			Value: &LiteralValueBool{
-				Value: false,
+				BoolValue: false,
 			},
 		}, nil
 	case p.match(True):
 		return &LiteralExpr{
 			Value: &LiteralValueBool{
-				Value: true,
+				BoolValue: true,
 			},
 		}, nil
 	case p.match(Nil):

@@ -9,9 +9,17 @@ import (
 	"strings"
 )
 
-// Lox encapsulates program state and execution methods
 type Lox struct {
+	Interpreter *Interpreter
 	HadError bool
+	HadRuntimeError bool
+}
+
+func NewLox() *Lox {
+
+	return &Lox{
+		Interpreter: &Interpreter{},
+	}
 }
 
 func (l *Lox) runFile(path string) {
@@ -24,6 +32,10 @@ func (l *Lox) runFile(path string) {
 
 	if (l.HadError) {
 		os.Exit(65)
+	}
+
+	if (l.HadRuntimeError) {
+		os.Exit(70)
 	}
 }
 
@@ -49,8 +61,7 @@ func (l *Lox) run(source string) {
 		return
 	}
 
-	printer := &AstPrinter{}
-	printer.Print(expr)
+	l.Interpreter.Interpret(expr)
 }
 
 func (l *Lox) errorLine(line int, message string) {
@@ -69,4 +80,10 @@ func (l *Lox) report(line int, where string, message string) {
 	msg := fmt.Sprintf("[line %d] Error%s : %s", line, where, message)
 	fmt.Fprintln(os.Stderr, msg)
 	l.HadError = true
+}
+
+func (l *Lox) runtimeError(err *RuntimeError) {
+	msg := fmt.Sprintf("%s\n[line %d]", err.Message, err.Token.Line)
+	fmt.Fprintln(os.Stderr, msg)
+	l.HadRuntimeError = true
 }

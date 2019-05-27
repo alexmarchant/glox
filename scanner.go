@@ -171,7 +171,7 @@ func (s *Scanner) string() {
 	s.advance()
 
 	value := s.Source[s.Start+1:s.Current-1]
-	s.addTokenValue(String, &LiteralValueString{Value: value})
+	s.addTokenValue(String, &LiteralValueString{StringValue: value})
 }
 
 func (s *Scanner) number() {
@@ -191,7 +191,7 @@ func (s *Scanner) number() {
 	if err != nil {
 		lox.errorLine(s.Line, "Ivalid number.")
 	}
-	s.addTokenValue(Number, &LiteralValueNumber{Value: value})
+	s.addTokenValue(Number, &LiteralValueNumber{NumberValue: value})
 }
 
 func (s *Scanner) identifier() {

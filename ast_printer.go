@@ -4,37 +4,38 @@ import (
 	"fmt"
 )
 
-type AstPrinter struct {
-	Output string
+type AstPrinter struct {}
+
+func (a *AstPrinter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, error) {
+	return a.parenthesize("group", expr.Expression), nil
 }
 
-func (a *AstPrinter) VisitGroupingExpr(expr *GroupingExpr) {
-	a.addParenthesize("group", expr.Expression)
+func (a *AstPrinter) VisitLiteralExpr(expr *LiteralExpr) (interface{}, error) {
+	return fmt.Sprintf("%v", expr.Value.Value()), nil
 }
 
-func (a *AstPrinter) VisitLiteralExpr(expr *LiteralExpr) {
-	a.Output += expr.Value.String()
+func (a *AstPrinter) VisitUnaryExpr(expr *UnaryExpr) (interface{}, error) {
+	return a.parenthesize(expr.Operator.Lexeme, expr.Right), nil
 }
 
-func (a *AstPrinter) VisitUnaryExpr(expr *UnaryExpr) {
-	a.addParenthesize(expr.Operator.Lexeme, expr.Right)
-}
-
-func (a *AstPrinter) VisitBinaryExpr(expr *BinaryExpr) {
-	a.addParenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
+func (a *AstPrinter) VisitBinaryExpr(expr *BinaryExpr) (interface{}, error) {
+	return a.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
 }
 
 func (a *AstPrinter) Print(expr Expr) {
-	expr.Accept(a)
-	fmt.Printf("%s\n", a.Output)
+	val, _ := expr.Accept(a)
+	result :=  val.(string)
+	fmt.Printf("%s\n", result)
 }
 
-func (a *AstPrinter) addParenthesize(name string, exprs ...Expr) {
-	a.Output += "("
-	a.Output += name
+func (a *AstPrinter) parenthesize(name string, exprs ...Expr) string {
+	res := "("
+	res += name
 	for _, expr := range exprs {
-		a.Output += " "
-		expr.Accept(a)
+		res += " "
+		val, _ := expr.Accept(a)
+		res += val.(string)
 	}
-	a.Output += ")"
+	res += ")"
+	return res
 }

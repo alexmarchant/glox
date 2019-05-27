@@ -8,7 +8,7 @@ import (
 var lox *Lox
 
 func main() {
-	lox = &Lox{}
+	lox = NewLox()
 
 	args := os.Args[1:]
 	if (len(args) > 1) {                                   

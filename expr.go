@@ -2,59 +2,22 @@ package main
 
 type ExprType int
 const (
-	ExprTypeUnaryExpr ExprType = iota
-	ExprTypeBinaryExpr
+	ExprTypeBinaryExpr ExprType = iota
 	ExprTypeGroupingExpr
 	ExprTypeLiteralExpr
+	ExprTypeUnaryExpr
 )
 
 type Expr interface {
 	ExprType() ExprType
-	Accept(ExprVisitor)
+	Accept(ExprVisitor) (interface{}, error)
 }
 
 type ExprVisitor interface {
-	VisitBinaryExpr(*BinaryExpr)
-	VisitGroupingExpr(*GroupingExpr)
-	VisitLiteralExpr(*LiteralExpr)
-	VisitUnaryExpr(*UnaryExpr)
-}
-
-type GroupingExpr struct {
-	Expression Expr
-}
-
-func (t *GroupingExpr) ExprType() ExprType {
-	return ExprTypeGroupingExpr
-}
-
-func (t *GroupingExpr) Accept(visitor ExprVisitor) {
-	visitor.VisitGroupingExpr(t)
-}
-
-type LiteralExpr struct {
-	Value LiteralValue
-}
-
-func (t *LiteralExpr) ExprType() ExprType {
-	return ExprTypeLiteralExpr
-}
-
-func (t *LiteralExpr) Accept(visitor ExprVisitor) {
-	visitor.VisitLiteralExpr(t)
-}
-
-type UnaryExpr struct {
-	Operator *Token
-	Right Expr
-}
-
-func (t *UnaryExpr) ExprType() ExprType {
-	return ExprTypeUnaryExpr
-}
-
-func (t *UnaryExpr) Accept(visitor ExprVisitor) {
-	visitor.VisitUnaryExpr(t)
+	VisitBinaryExpr(*BinaryExpr) (interface{}, error)
+	VisitGroupingExpr(*GroupingExpr) (interface{}, error)
+	VisitLiteralExpr(*LiteralExpr) (interface{}, error)
+	VisitUnaryExpr(*UnaryExpr) (interface{}, error)
 }
 
 type BinaryExpr struct {
@@ -67,7 +30,44 @@ func (t *BinaryExpr) ExprType() ExprType {
 	return ExprTypeBinaryExpr
 }
 
-func (t *BinaryExpr) Accept(visitor ExprVisitor) {
-	visitor.VisitBinaryExpr(t)
+func (t *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitBinaryExpr(t)
+}
+
+type GroupingExpr struct {
+	Expression Expr
+}
+
+func (t *GroupingExpr) ExprType() ExprType {
+	return ExprTypeGroupingExpr
+}
+
+func (t *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitGroupingExpr(t)
+}
+
+type LiteralExpr struct {
+	Value LiteralValue
+}
+
+func (t *LiteralExpr) ExprType() ExprType {
+	return ExprTypeLiteralExpr
+}
+
+func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitLiteralExpr(t)
+}
+
+type UnaryExpr struct {
+	Operator *Token
+	Right Expr
+}
+
+func (t *UnaryExpr) ExprType() ExprType {
+	return ExprTypeUnaryExpr
+}
+
+func (t *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+	return visitor.VisitUnaryExpr(t)
 }
 
