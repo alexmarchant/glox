@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"github.com/sanity-io/litter"
 )
 
 // Lox encapsulates program state and execution methods
@@ -43,15 +42,31 @@ func (l *Lox) runPrompt() {
 func (l *Lox) run(source string) {
 	scanner := makeScanner(source)
 	tokens := scanner.scanTokens()
-	litter.Dump(tokens)
+	parser := &Parser{Tokens: tokens}
+	expr := parser.parse()
+
+	if lox.HadError {
+		return
+	}
+
+	printer := &AstPrinter{}
+	printer.Print(expr)
 }
 
-func (l *Lox) error(line int, message string) {
+func (l *Lox) errorLine(line int, message string) {
 	l.report(line, "", message)
 }
 
+func (l *Lox) errorToken(token *Token, message string) {
+	if token.Type == EOF {                          
+		l.report(token.Line, " at end", message)
+	} else {
+		l.report(token.Line, " at '" + token.Lexeme + "'", message)
+	}   
+}
+
 func (l *Lox) report(line int, where string, message string) {
-	msg := fmt.Sprintf("[line %d ] Error%s : %s", line, where, message)
+	msg := fmt.Sprintf("[line %d] Error%s : %s", line, where, message)
 	fmt.Fprintln(os.Stderr, msg)
 	l.HadError = true
 }

@@ -105,7 +105,7 @@ func (s *Scanner) scanToken() {
 			} else if isAlpha(char) {
 				s.identifier()
 			} else {
-				lox.error(s.Line, "Unexpected character.")
+				lox.errorLine(s.Line, "Unexpected character.")
 			}
 	}
 }
@@ -165,7 +165,7 @@ func (s *Scanner) string() {
 	}
 
 	if s.isAtEnd() {
-		lox.error(s.Line, "Unterminated string.")
+		lox.errorLine(s.Line, "Unterminated string.")
 	}
 
 	s.advance()
@@ -189,7 +189,7 @@ func (s *Scanner) number() {
 
 	value, err := strconv.ParseFloat(s.Source[s.Start:s.Current], 64)
 	if err != nil {
-		lox.error(s.Line, "Ivalid number.")
+		lox.errorLine(s.Line, "Ivalid number.")
 	}
 	s.addTokenValue(Number, &LiteralValueNumber{Value: value})
 }
