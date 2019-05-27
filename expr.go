@@ -2,10 +2,10 @@ package main
 
 type ExprType int
 const (
-	ExprTypeBinaryExpr ExprType = iota
+	ExprTypeUnaryExpr ExprType = iota
+	ExprTypeBinaryExpr
 	ExprTypeGroupingExpr
 	ExprTypeLiteralExpr
-	ExprTypeUnaryExpr
 )
 
 type Expr interface {
