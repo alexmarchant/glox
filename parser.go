@@ -5,16 +5,95 @@ import (
 )
 
 type Parser struct {
-	Tokens []*Token
+	Tokens  []*Token
 	Current int
 }
 
-func (p *Parser) parse() Expr {
-	expr, err := p.expression()
+func (p *Parser) parse() []Stmt {
+	statements := []Stmt{}
+
+	for !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+
+	return statements
+}
+
+func (p *Parser) declaration() Stmt {
+	var err error
+	var statement Stmt
+	if p.match(Var) {
+		statement, err = p.varDeclaration()
+	} else {
+		statement, err = p.statement()
+	}
 	if err != nil {
+		p.synchronize()
 		return nil
 	}
-	return expr
+	return statement
+}
+
+func (p *Parser) varDeclaration() (Stmt, error) {
+	var initializer Expr
+	var err error
+
+	name, err := p.consume(Identifier, "Expect variable name.")
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(Equal) {
+		initializer, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(Semicolon, "Expect ';' after variable declaration.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &VarStmt{
+		Name:        name,
+		Initializer: initializer,
+	}, nil
+}
+
+func (p *Parser) statement() (Stmt, error) {
+	if p.match(Print) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() (Stmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(Semicolon, "Expect ';' after value.")
+	if err != nil {
+		return nil, err
+	}
+	return &PrintStmt{
+		Expression: expr,
+	}, nil
+}
+
+func (p *Parser) expressionStatement() (Stmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(Semicolon, "Expect ';' after value.")
+	if err != nil {
+		return nil, err
+	}
+	return &ExpressionStmt{
+		Expression: expr,
+	}, nil
 }
 
 func (p *Parser) expression() (Expr, error) {
@@ -34,9 +113,9 @@ func (p *Parser) equality() (Expr, error) {
 			return nil, err
 		}
 		expr = &BinaryExpr{
-			Left: expr,
+			Left:     expr,
 			Operator: operator,
-			Right: right,
+			Right:    right,
 		}
 	}
 
@@ -56,9 +135,9 @@ func (p *Parser) comparison() (Expr, error) {
 			return nil, err
 		}
 		expr = &BinaryExpr{
-			Left: expr,
+			Left:     expr,
 			Operator: operator,
-			Right: right,
+			Right:    right,
 		}
 	}
 
@@ -78,9 +157,9 @@ func (p *Parser) addition() (Expr, error) {
 			return nil, err
 		}
 		expr = &BinaryExpr{
-			Left: expr,
+			Left:     expr,
 			Operator: operator,
-			Right: right,
+			Right:    right,
 		}
 	}
 
@@ -100,9 +179,9 @@ func (p *Parser) multiplication() (Expr, error) {
 			return nil, err
 		}
 		expr = &BinaryExpr{
-			Left: expr,
+			Left:     expr,
 			Operator: operator,
-			Right: right,
+			Right:    right,
 		}
 	}
 
@@ -118,7 +197,7 @@ func (p *Parser) unary() (Expr, error) {
 		}
 		return &UnaryExpr{
 			Operator: operator,
-			Right: right,
+			Right:    right,
 		}, nil
 	}
 
@@ -142,6 +221,10 @@ func (p *Parser) primary() (Expr, error) {
 	case p.match(Number, String):
 		return &LiteralExpr{
 			Value: p.previous().Literal,
+		}, nil
+	case p.match(Identifier):
+		return &VarExpr{
+			Name: p.previous(),
 		}, nil
 	case p.match(LeftParen):
 		expr, err := p.expression()

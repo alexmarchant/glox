@@ -1,14 +1,15 @@
 package main
 
 type Expr interface {
-	Accept(ExprVisitor) (interface{}, error)
+	Accept(ExprVisitor) (interface{}, *RuntimeError)
 }
 
 type ExprVisitor interface {
-	VisitLiteralExpr(*LiteralExpr) (interface{}, error)
-	VisitUnaryExpr(*UnaryExpr) (interface{}, error)
-	VisitBinaryExpr(*BinaryExpr) (interface{}, error)
-	VisitGroupingExpr(*GroupingExpr) (interface{}, error)
+	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
+	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
+	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
+	VisitGroupingExpr(*GroupingExpr) (interface{}, *RuntimeError)
+	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
 }
 
 type BinaryExpr struct {
@@ -17,7 +18,7 @@ type BinaryExpr struct {
 	Right Expr
 }
 
-func (t *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+func (t *BinaryExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitBinaryExpr(t)
 }
 
@@ -25,7 +26,7 @@ type GroupingExpr struct {
 	Expression Expr
 }
 
-func (t *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+func (t *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitGroupingExpr(t)
 }
 
@@ -33,7 +34,7 @@ type LiteralExpr struct {
 	Value interface{}
 }
 
-func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitLiteralExpr(t)
 }
 
@@ -42,6 +43,15 @@ type UnaryExpr struct {
 	Right Expr
 }
 
-func (t *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, error) {
+func (t *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitUnaryExpr(t)
 }
+
+type VarExpr struct {
+	Name *Token
+}
+
+func (t *VarExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitVarExpr(t)
+}
+
