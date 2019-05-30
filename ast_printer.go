@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type AstPrinter struct {}
+type AstPrinter struct{}
 
 func (a *AstPrinter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, *RuntimeError) {
 	return a.parenthesize("group", expr.Expression), nil
@@ -26,9 +26,13 @@ func (a *AstPrinter) VisitVarExpr(expr *VarExpr) (interface{}, *RuntimeError) {
 	return "", nil
 }
 
+func (a *AstPrinter) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeError) {
+	return "", nil
+}
+
 func (a *AstPrinter) Print(expr Expr) {
 	val, _ := expr.Accept(a)
-	result :=  val.(string)
+	result := val.(string)
 	fmt.Printf("%s\n", result)
 }
 

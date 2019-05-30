@@ -7,6 +7,7 @@ type Expr interface {
 type ExprVisitor interface {
 	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
 	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
+	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
 	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
 	VisitGroupingExpr(*GroupingExpr) (interface{}, *RuntimeError)
 	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
@@ -53,5 +54,14 @@ type VarExpr struct {
 
 func (t *VarExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitVarExpr(t)
+}
+
+type AssignExpr struct {
+	Name *Token
+	Value Expr
+}
+
+func (t *AssignExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitAssignExpr(t)
 }
 

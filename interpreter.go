@@ -17,7 +17,7 @@ type RuntimeError struct {
 
 func NewInterpreter() *Interpreter {
 	return &Interpreter{
-		Environment: NewEnvironment(),
+		Environment: NewEnvironment(nil),
 	}
 }
 
@@ -57,6 +57,13 @@ func (i *Interpreter) VisitVarStmt(stmt *VarStmt) (interface{}, *RuntimeError) {
 	}
 
 	i.Environment.define(stmt.Name.Lexeme, value)
+	return nil, nil
+}
+
+func (i *Interpreter) VisitBlockStmt(stmt *BlockStmt) (interface{}, *RuntimeError) {
+	i.executeBlock(
+		stmt.Statements,
+		NewEnvironment(i.Environment))
 	return nil, nil
 }
 
@@ -181,9 +188,40 @@ func (i *Interpreter) VisitVarExpr(expr *VarExpr) (interface{}, *RuntimeError) {
 	return i.Environment.get(expr.Name)
 }
 
+func (i *Interpreter) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeError) {
+	value, err := i.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.Environment.assign(expr.Name, value)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
 func (i *Interpreter) execute(stmt Stmt) *RuntimeError {
 	_, err := stmt.Accept(i)
 	return err
+}
+
+func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) *RuntimeError {
+	previousEnv := i.Environment
+	i.Environment = env
+	defer func() {
+		i.Environment = previousEnv
+	}()
+
+	for _, stmt := range statements {
+		err := i.execute(stmt)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (i *Interpreter) evaluate(expr Expr) (interface{}, *RuntimeError) {

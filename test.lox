@@ -1,3 +1,48 @@
+// Math
+print "Math (should print 3):";
+print 27 * 3 - 156 / 2;
+
+//Strings
+print "";
+print "Strings (should print Hello, World!):";
+print "Hello, World!";
+
+// Declaration
 var a = 1;
 var b = 2;
+print "";
+print "Var declaration (should print 3):";
 print a + b;
+
+// Assignment
+var c = "test";
+c = 3;
+print "";
+print "Var assignment (should print 3):";
+print c;
+
+// Blocks
+print "";
+print "Blocks:";
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+    var a = "outer a";
+    var b = "outer b";
+    {
+        var a = "inner a";
+        print "(inner, outer, global)";
+        print a;
+        print b;
+        print c;
+    }
+    print "(outer, outer, global)";
+    print a;
+    print b;
+    print c;
+}
+print "(global, global, global)";
+print a;
+print b;
+print c;

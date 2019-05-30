@@ -65,6 +65,15 @@ func (p *Parser) statement() (Stmt, error) {
 	if p.match(Print) {
 		return p.printStatement()
 	}
+	if p.match(LeftBrace) {
+		statements, err := p.block()
+		if err != nil {
+			return nil, err
+		}
+		return &BlockStmt{
+			Statements: statements,
+		}, nil
+	}
 	return p.expressionStatement()
 }
 
@@ -82,6 +91,21 @@ func (p *Parser) printStatement() (Stmt, error) {
 	}, nil
 }
 
+func (p *Parser) block() ([]Stmt, error) {
+	statements := []Stmt{}
+
+	for !p.check(RightBrace) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+
+	_, err := p.consume(RightBrace, "Expect '}' after block.")
+	if err != nil {
+		return nil, err
+	}
+
+	return statements, nil
+}
+
 func (p *Parser) expressionStatement() (Stmt, error) {
 	expr, err := p.expression()
 	if err != nil {
@@ -97,7 +121,34 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 }
 
 func (p *Parser) expression() (Expr, error) {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() (Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(Equal) {
+		equals := p.previous()
+		value, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
+
+		if varExpr, ok := expr.(*VarExpr); ok {
+			return &AssignExpr{
+				Name:  varExpr.Name,
+				Value: value,
+			}, nil
+		}
+
+		err = p.error(equals, "Invalid assignment target.")
+		return nil, err
+	}
+
+	return expr, nil
 }
 
 func (p *Parser) equality() (Expr, error) {
