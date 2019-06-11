@@ -1,29 +1,29 @@
 // Math
-print "Math (should print 3):";
-print 27 * 3 - 156 / 2;
+print("Math (should print 3):");
+print(27 * 3 - 156 / 2);
 
 //Strings
-print "";
-print "Strings (should print Hello, World!):";
-print "Hello, World!";
+print("");
+print("Strings (should print Hello, World!):");
+print("Hello, World!");
 
 // Declaration
 var a = 1;
 var b = 2;
-print "";
-print "Var declaration (should print 3):";
-print a + b;
+print("");
+print("Var declaration (should print 3):");
+print(a + b);
 
 // Assignment
 var c = "test";
 c = 3;
-print "";
-print "Var assignment (should print 3):";
-print c;
+print("");
+print("Var assignment (should print 3):");
+print(c);
 
 // Blocks
-print "";
-print "Blocks:";
+print("");
+print("Blocks:");
 var a = "global a";
 var b = "global b";
 var c = "global c";
@@ -32,17 +32,118 @@ var c = "global c";
     var b = "outer b";
     {
         var a = "inner a";
-        print "(inner, outer, global)";
-        print a;
-        print b;
-        print c;
+        print("(inner, outer, global)");
+        print(a);
+        print(b);
+        print(c);
     }
-    print "(outer, outer, global)";
-    print a;
-    print b;
-    print c;
+    print("(outer, outer, global)");
+    print(a);
+    print(b);
+    print(c);
 }
-print "(global, global, global)";
-print a;
-print b;
-print c;
+print("(global, global, global)");
+print(a);
+print(b);
+print(c);
+
+// If statements
+print("");
+print("If statements:");
+print("should print true:");
+if (1 == 1) {
+    print("true");
+} else {
+    print("false");
+}
+
+print("should print false:");
+if (1 == 2) {
+    print("true");
+} else {
+    print("false");
+}
+
+// Logical expressions
+print("");
+print("Logical expressions:");
+print("should print true:");
+print(nil or "true");
+print("should print true:");
+print("true" or "false");
+print("should print true:");
+if (true and 1 == 1) {
+    print("true");
+} else {
+    print("false");
+}
+
+// While loops
+print("");
+print("While loops (should print 1 - 10):");
+var i = 1;
+while (i <= 10) {
+    print(i);
+    i = i + 1;
+}
+
+// For loops
+print("");
+print("For loops (should print 11 - 20):");
+for (var i = 11; i <= 20; i = i + 1) {
+    print(i);
+}
+
+// Native functions
+print("");
+print("Native functions (should print unix time in s):");
+print(clock());
+
+// Define function
+print("");
+print("Define function (no output):");
+fun helloWorld() {
+    print("Hello, World!");
+}
+
+// Call function
+print("");
+print("Call function (should print Hello, World!):");
+helloWorld();
+
+// Return statements
+print("");
+print("Return statements (should print 3):");
+fun three() {
+    return 3;
+}
+print(three());
+
+// Complex recursive fibonacci
+print("");
+print("Complex recursive fibonacci (should print first 20 fib nums):");
+fun fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 2) + fibonacci(n - 1);
+}
+for (var i = 0; i < 20; i = i + 1) {
+  print(fibonacci(i));
+}
+
+// Closures
+print("");
+print("Closures (should print 1 then 2):");
+fun makeCounter() {
+    var i = 0;
+
+    fun counter() {
+        i = i + 1;
+        return i;
+    }
+
+    return counter;
+}
+
+var counter = makeCounter();
+print(counter());
+print(counter());

@@ -5,10 +5,13 @@ type Stmt interface {
 }
 
 type StmtVisitor interface {
-	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
-	VisitPrintStmt(*PrintStmt) (interface{}, *RuntimeError)
-	VisitVarStmt(*VarStmt) (interface{}, *RuntimeError)
 	VisitBlockStmt(*BlockStmt) (interface{}, *RuntimeError)
+	VisitIfStmt(*IfStmt) (interface{}, *RuntimeError)
+	VisitWhileStmt(*WhileStmt) (interface{}, *RuntimeError)
+	VisitFunctionStmt(*FunctionStmt) (interface{}, *RuntimeError)
+	VisitReturnStmt(*ReturnStmt) (interface{}, *RuntimeError)
+	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
+	VisitVarStmt(*VarStmt) (interface{}, *RuntimeError)
 }
 
 type ExpressionStmt struct {
@@ -17,14 +20,6 @@ type ExpressionStmt struct {
 
 func (t *ExpressionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitExpressionStmt(t)
-}
-
-type PrintStmt struct {
-	Expression Expr
-}
-
-func (t *PrintStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitPrintStmt(t)
 }
 
 type VarStmt struct {
@@ -42,5 +37,43 @@ type BlockStmt struct {
 
 func (t *BlockStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitBlockStmt(t)
+}
+
+type IfStmt struct {
+	Condition Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}
+
+func (t *IfStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitIfStmt(t)
+}
+
+type WhileStmt struct {
+	Condition Expr
+	Body Stmt
+}
+
+func (t *WhileStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitWhileStmt(t)
+}
+
+type FunctionStmt struct {
+	Name *Token
+	Params []*Token
+	Body []Stmt
+}
+
+func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitFunctionStmt(t)
+}
+
+type ReturnStmt struct {
+	Keyword *Token
+	Value Expr
+}
+
+func (t *ReturnStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitReturnStmt(t)
 }
 

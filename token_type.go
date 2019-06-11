@@ -1,26 +1,26 @@
 package main
 
 var keywords = map[string]TokenType{
-	"and": And,
-	"class": Class,
-	"else": Else,
-	"false": False,
-	"for": For,
-	"fun": Fun,
-	"if": If,
-	"nil": Nil,
-	"or": Or,
-	"print": Print,
+	"and":    And,
+	"class":  Class,
+	"else":   Else,
+	"false":  False,
+	"for":    For,
+	"fun":    Fun,
+	"if":     If,
+	"nil":    Nil,
+	"or":     Or,
 	"return": Return,
-	"super": Super,
-	"this": This,
-	"true": True,
-	"var": Var,
-	"while": While,
+	"super":  Super,
+	"this":   This,
+	"true":   True,
+	"var":    Var,
+	"while":  While,
 }
 
 // TokenType is an enum
 type TokenType int
+
 const (
 	// Single-character tokens.
 	LeftParen TokenType = iota
@@ -45,7 +45,6 @@ const (
 	Less
 	LessEqual
 
-
 	// Literals.
 	Identifier
 	String
@@ -69,7 +68,7 @@ const (
 	Var
 	While
 
-	EOF 
+	EOF
 )
 
 func (t TokenType) String() string {

@@ -7,17 +7,26 @@ import (
 
 type Interpreter struct {
 	Error       *RuntimeError
+	Globals     *Environment
 	Environment *Environment
 }
 
 type RuntimeError struct {
 	Token   *Token
 	Message string
+	Return  interface{}
 }
 
 func NewInterpreter() *Interpreter {
+	env := NewEnvironment(nil)
+
+	// Native functions
+	env.define("clock", &ClockNativeFunc{})
+	env.define("print", &PrintNativeFunc{})
+
 	return &Interpreter{
-		Environment: NewEnvironment(nil),
+		Environment: env,
+		Globals:     env,
 	}
 }
 
@@ -29,15 +38,6 @@ func (i *Interpreter) Interpret(stmts []Stmt) {
 			return
 		}
 	}
-}
-
-func (i *Interpreter) VisitPrintStmt(stmt *PrintStmt) (interface{}, *RuntimeError) {
-	val, err := i.evaluate(stmt.Expression)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("%s\n", i.stringify(val))
-	return nil, nil
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, *RuntimeError) {
@@ -60,11 +60,75 @@ func (i *Interpreter) VisitVarStmt(stmt *VarStmt) (interface{}, *RuntimeError) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt *WhileStmt) (interface{}, *RuntimeError) {
+	val, err := i.evaluate(stmt.Condition)
+	if err != nil {
+		return nil, err
+	}
+
+	for i.isTruthy(val) {
+		err = i.execute(stmt.Body)
+		if err != nil {
+			return nil, err
+		}
+		val, err = i.evaluate(stmt.Condition)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
 func (i *Interpreter) VisitBlockStmt(stmt *BlockStmt) (interface{}, *RuntimeError) {
 	i.executeBlock(
 		stmt.Statements,
 		NewEnvironment(i.Environment))
 	return nil, nil
+}
+
+func (i *Interpreter) VisitIfStmt(stmt *IfStmt) (interface{}, *RuntimeError) {
+	val, err := i.evaluate(stmt.Condition)
+	if err != nil {
+		return nil, err
+	}
+
+	if i.isTruthy(val) {
+		err = i.execute(stmt.ThenBranch)
+		if err != nil {
+			return nil, err
+		}
+	} else if stmt.ElseBranch != nil {
+		err = i.execute(stmt.ElseBranch)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (i *Interpreter) VisitFunctionStmt(stmt *FunctionStmt) (interface{}, *RuntimeError) {
+	function := &LoxFunction{
+		Declaration: stmt,
+		Closure:     i.Environment,
+	}
+	i.Environment.define(stmt.Name.Lexeme, function)
+	return nil, nil
+}
+
+func (i *Interpreter) VisitReturnStmt(stmt *ReturnStmt) (interface{}, *RuntimeError) {
+	var value interface{}
+	var err *RuntimeError
+
+	if stmt.Value != nil {
+		value, err = i.evaluate(stmt.Value)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, &RuntimeError{Return: value}
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, *RuntimeError) {
@@ -200,6 +264,61 @@ func (i *Interpreter) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeEr
 	}
 
 	return value, nil
+}
+
+func (i *Interpreter) VisitLogicalExpr(expr *LogicalExpr) (interface{}, *RuntimeError) {
+	left, err := i.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.Type == Or {
+		if i.isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left, nil
+		}
+	}
+
+	return i.evaluate(expr.Right)
+}
+
+func (i *Interpreter) VisitCallExpr(expr *CallExpr) (interface{}, *RuntimeError) {
+	callee, err := i.evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := []interface{}{}
+	for _, arg := range expr.Arguments {
+		res, err := i.evaluate(arg)
+		if err != nil {
+			return nil, err
+		}
+		arguments = append(arguments, res)
+	}
+
+	// Cast as callable
+	function, ok := callee.(LoxCallable)
+	if !ok {
+		return nil, &RuntimeError{
+			Token:   expr.Paren,
+			Message: "Can only call functions and classes.",
+		}
+	}
+
+	// Check arity
+	if len(arguments) != function.Arity() {
+		msg := fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(arguments))
+		return nil, &RuntimeError{
+			Token:   expr.Paren,
+			Message: msg,
+		}
+	}
+
+	return function.Call(i, arguments)
 }
 
 func (i *Interpreter) execute(stmt Stmt) *RuntimeError {

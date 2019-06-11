@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Parser struct {
@@ -22,7 +23,9 @@ func (p *Parser) parse() []Stmt {
 func (p *Parser) declaration() Stmt {
 	var err error
 	var statement Stmt
-	if p.match(Var) {
+	if p.match(Fun) {
+		statement, err = p.function("function")
+	} else if p.match(Var) {
 		statement, err = p.varDeclaration()
 	} else {
 		statement, err = p.statement()
@@ -62,8 +65,17 @@ func (p *Parser) varDeclaration() (Stmt, error) {
 }
 
 func (p *Parser) statement() (Stmt, error) {
-	if p.match(Print) {
-		return p.printStatement()
+	if p.match(For) {
+		return p.forStatement()
+	}
+	if p.match(If) {
+		return p.ifStatement()
+	}
+	if p.match(Return) {
+		return p.returnStatement()
+	}
+	if p.match(While) {
+		return p.whileStatement()
 	}
 	if p.match(LeftBrace) {
 		statements, err := p.block()
@@ -77,17 +89,181 @@ func (p *Parser) statement() (Stmt, error) {
 	return p.expressionStatement()
 }
 
-func (p *Parser) printStatement() (Stmt, error) {
-	expr, err := p.expression()
+func (p *Parser) forStatement() (Stmt, error) {
+	_, err := p.consume(LeftParen, "Expect '(' after 'for'.")
 	if err != nil {
 		return nil, err
 	}
-	_, err = p.consume(Semicolon, "Expect ';' after value.")
+
+	// Initializer
+	var initializer Stmt
+	if p.match(Semicolon) {
+		initializer = nil
+	} else if p.match(Var) {
+		initializer, err = p.varDeclaration()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		initializer, err = p.expressionStatement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Condition
+	var condition Expr
+	if !p.check(Semicolon) {
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(Semicolon, "Expect ';' after loop condition.")
 	if err != nil {
 		return nil, err
 	}
-	return &PrintStmt{
-		Expression: expr,
+
+	// Increment
+	var increment Expr
+	if !p.check(RightParen) {
+		increment, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(RightParen, "Expect ')' after for clauses.")
+	if err != nil {
+		return nil, err
+	}
+
+	// Body
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Add increment to body
+	if increment != nil {
+		body = &BlockStmt{
+			Statements: []Stmt{
+				body,
+				&ExpressionStmt{
+					Expression: increment,
+				},
+			},
+		}
+	}
+
+	// Add condition to while loop w/ body inside
+	if condition == nil {
+		condition = &LiteralExpr{
+			Value: true,
+		}
+	}
+	body = &WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}
+
+	// Add initializer before while loop
+	if initializer != nil {
+		body = &BlockStmt{
+			Statements: []Stmt{
+				initializer,
+				body,
+			},
+		}
+	}
+
+	return body, nil
+}
+
+func (p *Parser) ifStatement() (Stmt, error) {
+	// Condition
+	_, err := p.consume(LeftParen, "Expect '(' after 'if'.")
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(RightParen, "Expect ')' after if condition.")
+	if err != nil {
+		return nil, err
+	}
+
+	// Then
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	// Else
+	var elseBranch Stmt
+	if p.match(Else) {
+		elseBranch, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &IfStmt{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}, nil
+}
+
+func (p *Parser) returnStatement() (Stmt, error) {
+	keyword := p.previous()
+
+	var value Expr
+	var err error
+
+	if !p.check(Semicolon) {
+		value, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(Semicolon, "Expect ';' after return value.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReturnStmt{
+		Keyword: keyword,
+		Value:   value,
+	}, nil
+}
+
+func (p *Parser) whileStatement() (Stmt, error) {
+	// Condition
+	_, err := p.consume(LeftParen, "Expect '(' after 'while'.")
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(RightParen, "Expect ')' after condition.")
+	if err != nil {
+		return nil, err
+	}
+
+	// Body
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return &WhileStmt{
+		Condition: condition,
+		Body:      body,
 	}, nil
 }
 
@@ -120,12 +296,70 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 	}, nil
 }
 
+func (p *Parser) function(kind string) (*FunctionStmt, error) {
+	// Func name
+	name, err := p.consume(Identifier, fmt.Sprintf("Expect %s name.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	// Open paren
+	_, err = p.consume(LeftParen, fmt.Sprintf("Expect '(' after %s name.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	// Params
+	parameters := []*Token{}
+	if !p.check(RightParen) {
+		for {
+			if len(parameters) >= 8 {
+				p.error(p.peek(), "Cannot have more than 8 parameters.")
+			}
+
+			newParam, err := p.consume(Identifier, "Expect parameter name.")
+			if err != nil {
+				return nil, err
+			}
+			parameters = append(parameters, newParam)
+
+			if !p.match(Comma) {
+				break
+			}
+		}
+	}
+
+	// Close paren
+	_, err = p.consume(RightParen, fmt.Sprintf("Expect ')' after parameters."))
+	if err != nil {
+		return nil, err
+	}
+
+	// Left brace
+	_, err = p.consume(LeftBrace, fmt.Sprintf("Expect '{' before %s body.", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	// Body
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return &FunctionStmt{
+		Name:   name,
+		Params: parameters,
+		Body:   body,
+	}, nil
+}
+
 func (p *Parser) expression() (Expr, error) {
 	return p.assignment()
 }
 
 func (p *Parser) assignment() (Expr, error) {
-	expr, err := p.equality()
+	expr, err := p.or()
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +380,50 @@ func (p *Parser) assignment() (Expr, error) {
 
 		err = p.error(equals, "Invalid assignment target.")
 		return nil, err
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) or() (Expr, error) {
+	expr, err := p.and()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Or) {
+		operator := p.previous()
+		right, err := p.and()
+		if err != nil {
+			return nil, err
+		}
+		expr = &LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) and() (Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(And) {
+		operator := p.previous()
+		right, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+		expr = &LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
 	}
 
 	return expr, nil
@@ -252,7 +530,57 @@ func (p *Parser) unary() (Expr, error) {
 		}, nil
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() (Expr, error) {
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.match(LeftParen) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee Expr) (Expr, error) {
+	arguments := []Expr{}
+	if !p.check(RightParen) {
+		for {
+			if len(arguments) > 8 {
+				p.error(p.peek(), "Cannot have more than 8 arguments.")
+			}
+			expr, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			arguments = append(arguments, expr)
+			if !p.match(Comma) {
+				break
+			}
+		}
+	}
+
+	paren, err := p.consume(RightParen, "Expect ')' after arguments.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &CallExpr{
+		Callee:    callee,
+		Paren:     paren,
+		Arguments: arguments,
+	}, nil
 }
 
 func (p *Parser) primary() (Expr, error) {

@@ -5,12 +5,24 @@ type Expr interface {
 }
 
 type ExprVisitor interface {
-	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
-	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
-	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
+	VisitLogicalExpr(*LogicalExpr) (interface{}, *RuntimeError)
+	VisitCallExpr(*CallExpr) (interface{}, *RuntimeError)
 	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
 	VisitGroupingExpr(*GroupingExpr) (interface{}, *RuntimeError)
 	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
+	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
+	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
+	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
+}
+
+type CallExpr struct {
+	Callee Expr
+	Paren *Token
+	Arguments []Expr
+}
+
+func (t *CallExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitCallExpr(t)
 }
 
 type BinaryExpr struct {
@@ -63,5 +75,15 @@ type AssignExpr struct {
 
 func (t *AssignExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitAssignExpr(t)
+}
+
+type LogicalExpr struct {
+	Left Expr
+	Operator *Token
+	Right Expr
+}
+
+func (t *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitLogicalExpr(t)
 }
 
