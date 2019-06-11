@@ -314,7 +314,7 @@ func (p *Parser) function(kind string) (*FunctionStmt, error) {
 	if !p.check(RightParen) {
 		for {
 			if len(parameters) >= 8 {
-				p.error(p.peek(), "Cannot have more than 8 parameters.")
+				_ = p.error(p.peek(), "Cannot have more than 8 parameters.")
 			}
 
 			newParam, err := p.consume(Identifier, "Expect parameter name.")
@@ -558,7 +558,7 @@ func (p *Parser) finishCall(callee Expr) (Expr, error) {
 	if !p.check(RightParen) {
 		for {
 			if len(arguments) > 8 {
-				p.error(p.peek(), "Cannot have more than 8 arguments.")
+				_ = p.error(p.peek(), "Cannot have more than 8 arguments.")
 			}
 			expr, err := p.expression()
 			if err != nil {
