@@ -654,6 +654,10 @@ func (p *Parser) primary() (Expr, error) {
 		return &VarExpr{
 			Name: p.previous(),
 		}, nil
+	case p.match(This):
+		return &ThisExpr{
+			Keyword: p.previous(),
+		}, nil
 	case p.match(LeftParen):
 		expr, err := p.expression()
 		if err != nil {

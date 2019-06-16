@@ -10,12 +10,23 @@ func (l *LoxClass) String() string {
 }
 
 func (l *LoxClass) Call(i *Interpreter, args []interface{}) (interface{}, *RuntimeError) {
-	return &LoxInstance{
-		Class: l,
-	}, nil
+	instance := &LoxInstance{
+		Class:  l,
+		Fields: map[string]interface{}{},
+	}
+
+	if initializer, ok := l.findMethod("init"); ok {
+		initializer.bind(instance).Call(i, args)
+	}
+
+	return instance, nil
 }
 
 func (l *LoxClass) Arity() int {
+	if initializer, ok := l.findMethod("init"); ok {
+		return initializer.Arity()
+	}
+
 	return 0
 }
 

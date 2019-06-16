@@ -52,8 +52,8 @@ func (e *Environment) get(name *Token) (interface{}, *RuntimeError) {
 	}
 }
 
-func (e *Environment) getAt(distance int, name *Token) (interface{}, *RuntimeError) {
-	return e.ancestor(distance).Values[name.Lexeme], nil
+func (e *Environment) getAt(distance int, name string) (interface{}, *RuntimeError) {
+	return e.ancestor(distance).Values[name], nil
 }
 
 func (e *Environment) ancestor(distance int) *Environment {

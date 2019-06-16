@@ -163,10 +163,38 @@ fun testClosureDeclarations() {
 testClosureDeclarations();
 
 print("");
-print("Basic class (should print 'Crunch crunch crunch!'):");
+print("Class (should print 'Crunch crunch crunch!'):");
 class Bacon {
   eat() {
     print("Crunch crunch crunch!");
   }
 }
 Bacon().eat();
+
+print("");
+print("Class - bound this (should print 'Thing instance'):");
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print(this);
+    }
+
+    return localFunction;
+  }
+}
+var callback = Thing().getCallback();
+callback();
+
+print("");
+print("Class - inits (should print 'Alex'):");
+class Person {
+    init(name) {
+        this.name = name;
+    }
+
+    printName() {
+        print(this.name);
+    }
+}
+var alex = Person("Alex");
+alex.printName();

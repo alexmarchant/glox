@@ -49,7 +49,7 @@ func (i *Interpreter) resolve(expr Expr, depth int) {
 
 func (i *Interpreter) lookupVariable(name *Token, expr Expr) (interface{}, *RuntimeError) {
 	if distance, ok := i.Locals[expr]; ok {
-		return i.Environment.getAt(distance, name)
+		return i.Environment.getAt(distance, name.Lexeme)
 	} else {
 		return i.Globals.get(name)
 	}
@@ -154,8 +154,9 @@ func (i *Interpreter) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeErro
 	methods := map[string]*LoxFunction{}
 	for _, method := range stmt.Methods {
 		function := &LoxFunction{
-			Declaration: method,
-			Closure:     i.Environment,
+			Declaration:   method,
+			Closure:       i.Environment,
+			IsInitializer: method.Name.Lexeme == "init",
 		}
 		methods[method.Name.Lexeme] = function
 	}
@@ -402,6 +403,12 @@ func (i *Interpreter) VisitCallExpr(expr *CallExpr) (interface{}, *RuntimeError)
 
 	return function.Call(i, arguments)
 }
+
+func (i *Interpreter) VisitThisExpr(expr *ThisExpr) (interface{}, *RuntimeError) {
+	return i.lookupVariable(expr.Keyword, expr)
+}
+
+// Helpers
 
 func (i *Interpreter) execute(stmt Stmt) *RuntimeError {
 	_, err := stmt.Accept(i)

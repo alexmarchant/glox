@@ -5,24 +5,14 @@ type Stmt interface {
 }
 
 type StmtVisitor interface {
-	VisitReturnStmt(*ReturnStmt) (interface{}, *RuntimeError)
-	VisitClassStmt(*ClassStmt) (interface{}, *RuntimeError)
-	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
 	VisitVarStmt(*VarStmt) (interface{}, *RuntimeError)
 	VisitBlockStmt(*BlockStmt) (interface{}, *RuntimeError)
 	VisitIfStmt(*IfStmt) (interface{}, *RuntimeError)
 	VisitWhileStmt(*WhileStmt) (interface{}, *RuntimeError)
 	VisitFunctionStmt(*FunctionStmt) (interface{}, *RuntimeError)
-}
-
-type FunctionStmt struct {
-	Name *Token
-	Params []*Token
-	Body []Stmt
-}
-
-func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitFunctionStmt(t)
+	VisitReturnStmt(*ReturnStmt) (interface{}, *RuntimeError)
+	VisitClassStmt(*ClassStmt) (interface{}, *RuntimeError)
+	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
 }
 
 type ReturnStmt struct {
@@ -85,5 +75,15 @@ type WhileStmt struct {
 
 func (t *WhileStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitWhileStmt(t)
+}
+
+type FunctionStmt struct {
+	Name *Token
+	Params []*Token
+	Body []Stmt
+}
+
+func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitFunctionStmt(t)
 }
 

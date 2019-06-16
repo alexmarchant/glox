@@ -17,7 +17,7 @@ func (l *LoxInstance) get(name *Token) (interface{}, *RuntimeError) {
 	}
 
 	if method, ok := l.Class.findMethod(name.Lexeme); ok {
-		return method, nil
+		return method.bind(l), nil
 	}
 
 	return nil, &RuntimeError{

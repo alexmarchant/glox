@@ -6,12 +6,21 @@ const (
 	FunctionTypeNone FunctionType = iota
 	FunctionTypeFunction
 	FunctionTypeMethod
+	FunctionTypeInitializer
+)
+
+type ClassType int
+
+const (
+	ClassTypeNone ClassType = iota
+	ClassTypeClass
 )
 
 type Resolver struct {
 	Interpreter     *Interpreter
 	Scopes          []map[string]bool
 	CurrentFunction FunctionType
+	CurrentClass    ClassType
 }
 
 func NewResolver(interpreter *Interpreter) *Resolver {
@@ -19,6 +28,7 @@ func NewResolver(interpreter *Interpreter) *Resolver {
 		Interpreter:     interpreter,
 		Scopes:          []map[string]bool{},
 		CurrentFunction: FunctionTypeNone,
+		CurrentClass:    ClassTypeNone,
 	}
 }
 
@@ -165,7 +175,18 @@ func (r *Resolver) VisitSetExpr(expr *SetExpr) (interface{}, *RuntimeError) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitThisExpr(expr *ThisExpr) (interface{}, *RuntimeError) {
+	if r.CurrentClass == ClassTypeNone {
+		lox.errorToken(expr.Keyword, "Cannot use 'this' outside of a class.")
+		return nil, nil
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
 // Statements
+
 func (r *Resolver) VisitBlockStmt(stmt *BlockStmt) (interface{}, *RuntimeError) {
 	r.beginScope()
 	r.resolveStatements(stmt.Statements)
@@ -202,6 +223,10 @@ func (r *Resolver) VisitReturnStmt(stmt *ReturnStmt) (interface{}, *RuntimeError
 	}
 
 	if stmt.Value != nil {
+		if r.CurrentFunction == FunctionTypeInitializer {
+			lox.errorToken(stmt.Keyword, "Cannot return a value from an initializer.")
+		}
+
 		r.resolveExpression(stmt.Value)
 	}
 	return nil, nil
@@ -222,13 +247,24 @@ func (r *Resolver) VisitVarStmt(stmt *VarStmt) (interface{}, *RuntimeError) {
 }
 
 func (r *Resolver) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) {
+	enclosingClass := r.CurrentClass
+	r.CurrentClass = ClassTypeClass
 	r.declare(stmt.Name)
+
+	r.beginScope()
+	r.Scopes[len(r.Scopes)-1]["this"] = true
 
 	for _, method := range stmt.Methods {
 		declaration := FunctionTypeMethod
+		if method.Name.Lexeme == "init" {
+			declaration = FunctionTypeInitializer
+		}
 		r.resolveFunction(method, declaration)
 	}
 
+	r.endScope()
+
 	r.define(stmt.Name)
+	r.CurrentClass = enclosingClass
 	return nil, nil
 }
