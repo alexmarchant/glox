@@ -63,7 +63,8 @@ func (f *PrintNativeFunc) String() string {
 type ClockNativeFunc struct{}
 
 func (f *ClockNativeFunc) Call(i *Interpreter, args []interface{}) (interface{}, *RuntimeError) {
-	return time.Now().UTC().UnixNano() / 1000000000, nil
+	val := time.Now().UTC().UnixNano() / 1000000000
+	return float64(val), nil
 }
 
 func (f *ClockNativeFunc) Arity() int {

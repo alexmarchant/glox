@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -416,8 +417,10 @@ func (i *Interpreter) stringify(val interface{}) string {
 
 	if fVal, ok := val.(float64); ok {
 		sVal := fmt.Sprintf("%f", fVal)
-		sVal = strings.Trim(sVal, "0")
-		sVal = strings.Trim(sVal, ".")
+		if matched, _ := regexp.MatchString("\\.0+$", sVal); matched {
+			sVal = strings.TrimRight(sVal, "0")
+			sVal = strings.TrimRight(sVal, ".")
+		}
 		return sVal
 	}
 
