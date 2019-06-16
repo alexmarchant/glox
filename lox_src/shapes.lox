@@ -1,0 +1,34 @@
+var PI = 3.141592;
+
+class Square {
+  init(width, height) {
+    this.width = width;
+    this.height = height;
+  }
+
+  area() {
+    return this.width * this.height;
+  }
+}
+
+class Circle {
+  init(radius) {
+    this.radius = radius;
+  }
+
+  area() {
+    return PI * (this.radius * this.radius);
+  }
+}
+
+var square = Square(3, 3);
+print(square.area());
+
+var circle = Circle(1.5);
+print(circle.area());
+
+print("difference between circle and square:");
+var diff = square.area() - circle.area();
+print(diff);
+print("or %:");
+print((diff / square.area()) * 100);
