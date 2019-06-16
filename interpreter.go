@@ -55,6 +55,8 @@ func (i *Interpreter) lookupVariable(name *Token, expr Expr) (interface{}, *Runt
 	}
 }
 
+// Statements
+
 func (i *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) (interface{}, *RuntimeError) {
 	_, err := i.evaluate(stmt.Expression)
 	return nil, err
@@ -144,6 +146,67 @@ func (i *Interpreter) VisitReturnStmt(stmt *ReturnStmt) (interface{}, *RuntimeEr
 	}
 
 	return nil, &RuntimeError{Return: value}
+}
+
+func (i *Interpreter) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) {
+	i.Environment.define(stmt.Name.Lexeme, nil)
+
+	methods := map[string]*LoxFunction{}
+	for _, method := range stmt.Methods {
+		function := &LoxFunction{
+			Declaration: method,
+			Closure:     i.Environment,
+		}
+		methods[method.Name.Lexeme] = function
+	}
+
+	class := &LoxClass{
+		Name:    stmt.Name.Lexeme,
+		Methods: methods,
+	}
+	i.Environment.assign(stmt.Name, class)
+	return nil, nil
+}
+
+// Expressions
+
+func (i *Interpreter) VisitGetExpr(expr *GetExpr) (interface{}, *RuntimeError) {
+	object, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	if instance, ok := object.(*LoxInstance); ok {
+		return instance.get(expr.Name)
+	}
+
+	return nil, &RuntimeError{
+		Token:   expr.Name,
+		Message: "Only instances have properties.",
+	}
+}
+
+func (i *Interpreter) VisitSetExpr(expr *SetExpr) (interface{}, *RuntimeError) {
+	object, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	instance, ok := object.(*LoxInstance)
+	if !ok {
+		return nil, &RuntimeError{
+			Token:   expr.Name,
+			Message: "Only instances have properties.",
+		}
+	}
+
+	value, err := i.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	instance.set(expr.Name, value)
+	return value, nil
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *GroupingExpr) (interface{}, *RuntimeError) {

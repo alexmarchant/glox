@@ -5,14 +5,34 @@ type Expr interface {
 }
 
 type ExprVisitor interface {
-	VisitLogicalExpr(*LogicalExpr) (interface{}, *RuntimeError)
+	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
 	VisitCallExpr(*CallExpr) (interface{}, *RuntimeError)
-	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
+	VisitSetExpr(*SetExpr) (interface{}, *RuntimeError)
+	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
 	VisitGroupingExpr(*GroupingExpr) (interface{}, *RuntimeError)
 	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
-	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
 	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
-	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
+	VisitLogicalExpr(*LogicalExpr) (interface{}, *RuntimeError)
+	VisitGetExpr(*GetExpr) (interface{}, *RuntimeError)
+	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
+}
+
+type UnaryExpr struct {
+	Operator *Token
+	Right Expr
+}
+
+func (t *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitUnaryExpr(t)
+}
+
+type AssignExpr struct {
+	Name *Token
+	Value Expr
+}
+
+func (t *AssignExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitAssignExpr(t)
 }
 
 type CallExpr struct {
@@ -23,6 +43,16 @@ type CallExpr struct {
 
 func (t *CallExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitCallExpr(t)
+}
+
+type SetExpr struct {
+	Object Expr
+	Name *Token
+	Value Expr
+}
+
+func (t *SetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitSetExpr(t)
 }
 
 type BinaryExpr struct {
@@ -51,30 +81,12 @@ func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitLiteralExpr(t)
 }
 
-type UnaryExpr struct {
-	Operator *Token
-	Right Expr
-}
-
-func (t *UnaryExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitUnaryExpr(t)
-}
-
 type VarExpr struct {
 	Name *Token
 }
 
 func (t *VarExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitVarExpr(t)
-}
-
-type AssignExpr struct {
-	Name *Token
-	Value Expr
-}
-
-func (t *AssignExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitAssignExpr(t)
 }
 
 type LogicalExpr struct {
@@ -85,5 +97,14 @@ type LogicalExpr struct {
 
 func (t *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitLogicalExpr(t)
+}
+
+type GetExpr struct {
+	Object Expr
+	Name *Token
+}
+
+func (t *GetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitGetExpr(t)
 }
 

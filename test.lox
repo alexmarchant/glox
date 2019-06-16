@@ -161,3 +161,12 @@ fun testClosureDeclarations() {
     printA();
 }
 testClosureDeclarations();
+
+print("");
+print("Basic class (should print 'Crunch crunch crunch!'):");
+class Bacon {
+  eat() {
+    print("Crunch crunch crunch!");
+  }
+}
+Bacon().eat();

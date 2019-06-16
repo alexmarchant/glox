@@ -5,6 +5,7 @@ type FunctionType int
 const (
 	FunctionTypeNone FunctionType = iota
 	FunctionTypeFunction
+	FunctionTypeMethod
 )
 
 type Resolver struct {
@@ -153,6 +154,17 @@ func (r *Resolver) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeError
 	return nil, nil
 }
 
+func (r *Resolver) VisitGetExpr(expr *GetExpr) (interface{}, *RuntimeError) {
+	r.resolveExpression(expr.Object)
+	return nil, nil
+}
+
+func (r *Resolver) VisitSetExpr(expr *SetExpr) (interface{}, *RuntimeError) {
+	r.resolveExpression(expr.Value)
+	r.resolveExpression(expr.Object)
+	return nil, nil
+}
+
 // Statements
 func (r *Resolver) VisitBlockStmt(stmt *BlockStmt) (interface{}, *RuntimeError) {
 	r.beginScope()
@@ -205,6 +217,18 @@ func (r *Resolver) VisitVarStmt(stmt *VarStmt) (interface{}, *RuntimeError) {
 	if stmt.Initializer != nil {
 		r.resolveExpression(stmt.Initializer)
 	}
+	r.define(stmt.Name)
+	return nil, nil
+}
+
+func (r *Resolver) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) {
+	r.declare(stmt.Name)
+
+	for _, method := range stmt.Methods {
+		declaration := FunctionTypeMethod
+		r.resolveFunction(method, declaration)
+	}
+
 	r.define(stmt.Name)
 	return nil, nil
 }

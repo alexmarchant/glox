@@ -1,9 +1,20 @@
+// Correct answer: 102334155
+// 
+// Benchmarks:
+// Glox 6-15-19: 215.87s
+// 
+// Unrelated benchmarks but for reference:
+// Ruby 2.6: 9.17s
+// Node 10.15: 1.16s
+// Go 1.12: 0.70s
+// C: 0.71s
+
 fun fib(n) {
   if (n < 2) return n;
   return fib(n - 1) + fib(n - 2); 
 }
 
-var before = clock();
-print(fib(2));
-var after = clock();
+var before = clock() / 1000;
+print(fib(40));
+var after = clock() / 1000;
 print(after - before);

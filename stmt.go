@@ -5,13 +5,42 @@ type Stmt interface {
 }
 
 type StmtVisitor interface {
+	VisitReturnStmt(*ReturnStmt) (interface{}, *RuntimeError)
+	VisitClassStmt(*ClassStmt) (interface{}, *RuntimeError)
+	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
+	VisitVarStmt(*VarStmt) (interface{}, *RuntimeError)
 	VisitBlockStmt(*BlockStmt) (interface{}, *RuntimeError)
 	VisitIfStmt(*IfStmt) (interface{}, *RuntimeError)
 	VisitWhileStmt(*WhileStmt) (interface{}, *RuntimeError)
 	VisitFunctionStmt(*FunctionStmt) (interface{}, *RuntimeError)
-	VisitReturnStmt(*ReturnStmt) (interface{}, *RuntimeError)
-	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
-	VisitVarStmt(*VarStmt) (interface{}, *RuntimeError)
+}
+
+type FunctionStmt struct {
+	Name *Token
+	Params []*Token
+	Body []Stmt
+}
+
+func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitFunctionStmt(t)
+}
+
+type ReturnStmt struct {
+	Keyword *Token
+	Value Expr
+}
+
+func (t *ReturnStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitReturnStmt(t)
+}
+
+type ClassStmt struct {
+	Name *Token
+	Methods []*FunctionStmt
+}
+
+func (t *ClassStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitClassStmt(t)
 }
 
 type ExpressionStmt struct {
@@ -56,24 +85,5 @@ type WhileStmt struct {
 
 func (t *WhileStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitWhileStmt(t)
-}
-
-type FunctionStmt struct {
-	Name *Token
-	Params []*Token
-	Body []Stmt
-}
-
-func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitFunctionStmt(t)
-}
-
-type ReturnStmt struct {
-	Keyword *Token
-	Value Expr
-}
-
-func (t *ReturnStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitReturnStmt(t)
 }
 

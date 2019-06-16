@@ -23,7 +23,9 @@ func (p *Parser) parse() []Stmt {
 func (p *Parser) declaration() Stmt {
 	var err error
 	var statement Stmt
-	if p.match(Fun) {
+	if p.match(Class) {
+		statement, err = p.classDeclaration()
+	} else if p.match(Fun) {
 		statement, err = p.function("function")
 	} else if p.match(Var) {
 		statement, err = p.varDeclaration()
@@ -296,6 +298,38 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 	}, nil
 }
 
+func (p *Parser) classDeclaration() (*ClassStmt, error) {
+	name, err := p.consume(Identifier, "Expect class name.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(LeftBrace, "Expect '{' before class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	methods := []*FunctionStmt{}
+
+	for !p.check(RightBrace) && !p.isAtEnd() {
+		method, err := p.function("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, method)
+	}
+
+	_, err = p.consume(RightBrace, "Expect '}' after class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClassStmt{
+		Name:    name,
+		Methods: methods,
+	}, nil
+}
+
 func (p *Parser) function(kind string) (*FunctionStmt, error) {
 	// Func name
 	name, err := p.consume(Identifier, fmt.Sprintf("Expect %s name.", kind))
@@ -375,6 +409,12 @@ func (p *Parser) assignment() (Expr, error) {
 			return &AssignExpr{
 				Name:  varExpr.Name,
 				Value: value,
+			}, nil
+		} else if getExpr, ok := expr.(*GetExpr); ok {
+			return &SetExpr{
+				Object: getExpr.Object,
+				Name:   getExpr.Name,
+				Value:  value,
 			}, nil
 		}
 
@@ -544,6 +584,15 @@ func (p *Parser) call() (Expr, error) {
 			expr, err = p.finishCall(expr)
 			if err != nil {
 				return nil, err
+			}
+		} else if p.match(Dot) {
+			name, err := p.consume(Identifier, "Expect property name after '.'.")
+			if err != nil {
+				return nil, err
+			}
+			expr = &GetExpr{
+				Object: expr,
+				Name:   name,
 			}
 		} else {
 			break
