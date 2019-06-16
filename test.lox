@@ -147,3 +147,17 @@ fun makeCounter() {
 var counter = makeCounter();
 print(counter());
 print(counter());
+
+print("");
+print("Tricky closures (should print global twice):");
+var a = "global";
+fun testClosureDeclarations() {
+    fun printA() {
+        print(a);
+    }
+
+    printA();
+    var a = "local";
+    printA();
+}
+testClosureDeclarations();

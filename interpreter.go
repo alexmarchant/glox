@@ -9,6 +9,7 @@ type Interpreter struct {
 	Error       *RuntimeError
 	Globals     *Environment
 	Environment *Environment
+	Locals      map[Expr]int
 }
 
 type RuntimeError struct {
@@ -27,6 +28,7 @@ func NewInterpreter() *Interpreter {
 	return &Interpreter{
 		Environment: env,
 		Globals:     env,
+		Locals:      map[Expr]int{},
 	}
 }
 
@@ -37,6 +39,18 @@ func (i *Interpreter) Interpret(stmts []Stmt) {
 			lox.runtimeError(err)
 			return
 		}
+	}
+}
+
+func (i *Interpreter) resolve(expr Expr, depth int) {
+	i.Locals[expr] = depth
+}
+
+func (i *Interpreter) lookupVariable(name *Token, expr Expr) (interface{}, *RuntimeError) {
+	if distance, ok := i.Locals[expr]; ok {
+		return i.Environment.getAt(distance, name)
+	} else {
+		return i.Globals.get(name)
 	}
 }
 
@@ -249,7 +263,7 @@ func (i *Interpreter) VisitBinaryExpr(expr *BinaryExpr) (interface{}, *RuntimeEr
 }
 
 func (i *Interpreter) VisitVarExpr(expr *VarExpr) (interface{}, *RuntimeError) {
-	return i.Environment.get(expr.Name)
+	return i.lookupVariable(expr.Name, expr)
 }
 
 func (i *Interpreter) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeError) {
@@ -258,7 +272,11 @@ func (i *Interpreter) VisitAssignExpr(expr *AssignExpr) (interface{}, *RuntimeEr
 		return nil, err
 	}
 
-	err = i.Environment.assign(expr.Name, value)
+	if distance, ok := i.Locals[expr]; ok {
+		i.Environment.assignAt(distance, expr.Name, value)
+	} else {
+		err = i.Globals.assign(expr.Name, value)
+	}
 	if err != nil {
 		return nil, err
 	}

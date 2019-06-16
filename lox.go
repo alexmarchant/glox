@@ -62,6 +62,13 @@ func (l *Lox) run(source string) {
 		return
 	}
 
+	resolver := NewResolver(l.Interpreter)
+	resolver.resolveStatements(statements)
+
+	if lox.HadError {
+		return
+	}
+
 	l.Interpreter.Interpret(statements)
 }
 
