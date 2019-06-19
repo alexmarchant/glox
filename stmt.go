@@ -15,17 +15,9 @@ type StmtVisitor interface {
 	VisitExpressionStmt(*ExpressionStmt) (interface{}, *RuntimeError)
 }
 
-type ReturnStmt struct {
-	Keyword *Token
-	Value Expr
-}
-
-func (t *ReturnStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitReturnStmt(t)
-}
-
 type ClassStmt struct {
 	Name *Token
+	Superclass *VarExpr
 	Methods []*FunctionStmt
 }
 
@@ -85,5 +77,14 @@ type FunctionStmt struct {
 
 func (t *FunctionStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitFunctionStmt(t)
+}
+
+type ReturnStmt struct {
+	Keyword *Token
+	Value Expr
+}
+
+func (t *ReturnStmt) Accept(visitor StmtVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitReturnStmt(t)
 }
 

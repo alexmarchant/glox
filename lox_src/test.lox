@@ -198,3 +198,18 @@ class Person {
 }
 var alex = Person("Alex");
 alex.printName();
+
+print("");
+print("Class - inheritance (should print 'Fry until golden brown.', 'Pipe full of custard and coat with chocolate.'):");
+class Doughnut {
+  cook() {
+    print("Fry until golden brown.");
+  }
+}
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print("Pipe full of custard and coat with chocolate.");
+  }
+}
+BostonCream().cook();

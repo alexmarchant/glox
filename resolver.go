@@ -14,6 +14,7 @@ type ClassType int
 const (
 	ClassTypeNone ClassType = iota
 	ClassTypeClass
+	ClassTypeSubclass
 )
 
 type Resolver struct {
@@ -185,6 +186,16 @@ func (r *Resolver) VisitThisExpr(expr *ThisExpr) (interface{}, *RuntimeError) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitSuperExpr(expr *SuperExpr) (interface{}, *RuntimeError) {
+	if r.CurrentClass == ClassTypeNone {
+		lox.errorToken(expr.Keyword, "Cannot use 'super' outside of a class.")
+	} else if r.CurrentClass != ClassTypeSubclass {
+		lox.errorToken(expr.Keyword, "Cannot use 'super' in a class with no superclass.")
+	}
+	r.resolveLocal(expr, expr.Keyword)
+	return nil, nil
+}
+
 // Statements
 
 func (r *Resolver) VisitBlockStmt(stmt *BlockStmt) (interface{}, *RuntimeError) {
@@ -250,6 +261,21 @@ func (r *Resolver) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) 
 	enclosingClass := r.CurrentClass
 	r.CurrentClass = ClassTypeClass
 	r.declare(stmt.Name)
+	r.define(stmt.Name)
+
+	if stmt.Superclass != nil && stmt.Superclass.Name.Lexeme == stmt.Name.Lexeme {
+		lox.errorToken(stmt.Superclass.Name, "A class cannot inherit from itself.")
+	}
+
+	if stmt.Superclass != nil {
+		r.CurrentClass = ClassTypeSubclass
+		r.resolveExpression(stmt.Superclass)
+	}
+
+	if stmt.Superclass != nil {
+		r.beginScope()
+		r.Scopes[len(r.Scopes)-1]["super"] = true
+	}
 
 	r.beginScope()
 	r.Scopes[len(r.Scopes)-1]["this"] = true
@@ -263,8 +289,9 @@ func (r *Resolver) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) 
 	}
 
 	r.endScope()
-
-	r.define(stmt.Name)
+	if stmt.Superclass != nil {
+		r.endScope()
+	}
 	r.CurrentClass = enclosingClass
 	return nil, nil
 }

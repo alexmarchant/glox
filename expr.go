@@ -5,47 +5,26 @@ type Expr interface {
 }
 
 type ExprVisitor interface {
-	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
-	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
-	VisitGetExpr(*GetExpr) (interface{}, *RuntimeError)
+	VisitSetExpr(*SetExpr) (interface{}, *RuntimeError)
 	VisitThisExpr(*ThisExpr) (interface{}, *RuntimeError)
 	VisitBinaryExpr(*BinaryExpr) (interface{}, *RuntimeError)
 	VisitGroupingExpr(*GroupingExpr) (interface{}, *RuntimeError)
-	VisitLogicalExpr(*LogicalExpr) (interface{}, *RuntimeError)
+	VisitVarExpr(*VarExpr) (interface{}, *RuntimeError)
 	VisitCallExpr(*CallExpr) (interface{}, *RuntimeError)
-	VisitSetExpr(*SetExpr) (interface{}, *RuntimeError)
+	VisitGetExpr(*GetExpr) (interface{}, *RuntimeError)
+	VisitLiteralExpr(*LiteralExpr) (interface{}, *RuntimeError)
 	VisitUnaryExpr(*UnaryExpr) (interface{}, *RuntimeError)
 	VisitAssignExpr(*AssignExpr) (interface{}, *RuntimeError)
+	VisitLogicalExpr(*LogicalExpr) (interface{}, *RuntimeError)
+	VisitSuperExpr(*SuperExpr) (interface{}, *RuntimeError)
 }
 
-type LogicalExpr struct {
-	Left Expr
-	Operator *Token
-	Right Expr
+type LiteralExpr struct {
+	Value interface{}
 }
 
-func (t *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitLogicalExpr(t)
-}
-
-type CallExpr struct {
-	Callee Expr
-	Paren *Token
-	Arguments []Expr
-}
-
-func (t *CallExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitCallExpr(t)
-}
-
-type SetExpr struct {
-	Object Expr
-	Name *Token
-	Value Expr
-}
-
-func (t *SetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitSetExpr(t)
+func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitLiteralExpr(t)
 }
 
 type UnaryExpr struct {
@@ -66,37 +45,23 @@ func (t *AssignExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitAssignExpr(t)
 }
 
-type LiteralExpr struct {
-	Value interface{}
+type LogicalExpr struct {
+	Left Expr
+	Operator *Token
+	Right Expr
 }
 
-func (t *LiteralExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitLiteralExpr(t)
+func (t *LogicalExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitLogicalExpr(t)
 }
 
-type VarExpr struct {
-	Name *Token
-}
-
-func (t *VarExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitVarExpr(t)
-}
-
-type GetExpr struct {
-	Object Expr
-	Name *Token
-}
-
-func (t *GetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitGetExpr(t)
-}
-
-type ThisExpr struct {
+type SuperExpr struct {
 	Keyword *Token
+	Method *Token
 }
 
-func (t *ThisExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
-	return visitor.VisitThisExpr(t)
+func (t *SuperExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitSuperExpr(t)
 }
 
 type BinaryExpr struct {
@@ -115,5 +80,50 @@ type GroupingExpr struct {
 
 func (t *GroupingExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
 	return visitor.VisitGroupingExpr(t)
+}
+
+type VarExpr struct {
+	Name *Token
+}
+
+func (t *VarExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitVarExpr(t)
+}
+
+type CallExpr struct {
+	Callee Expr
+	Paren *Token
+	Arguments []Expr
+}
+
+func (t *CallExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitCallExpr(t)
+}
+
+type GetExpr struct {
+	Object Expr
+	Name *Token
+}
+
+func (t *GetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitGetExpr(t)
+}
+
+type SetExpr struct {
+	Object Expr
+	Name *Token
+	Value Expr
+}
+
+func (t *SetExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitSetExpr(t)
+}
+
+type ThisExpr struct {
+	Keyword *Token
+}
+
+func (t *ThisExpr) Accept(visitor ExprVisitor) (interface{}, *RuntimeError) {
+	return visitor.VisitThisExpr(t)
 }
 

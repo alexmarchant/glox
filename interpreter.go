@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 )
 
 type Interpreter struct {
@@ -149,7 +147,30 @@ func (i *Interpreter) VisitReturnStmt(stmt *ReturnStmt) (interface{}, *RuntimeEr
 }
 
 func (i *Interpreter) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeError) {
+	var superclass *LoxClass
+
+	if stmt.Superclass != nil {
+		var ok bool
+
+		val, err := i.evaluate(stmt.Superclass)
+		if err != nil {
+			return nil, err
+		}
+		superclass, ok = val.(*LoxClass)
+		if !ok {
+			return nil, &RuntimeError{
+				Token:   stmt.Superclass.Name,
+				Message: "Superclass must be a class.",
+			}
+		}
+	}
+
 	i.Environment.define(stmt.Name.Lexeme, nil)
+
+	if stmt.Superclass != nil {
+		i.Environment = NewEnvironment(i.Environment)
+		i.Environment.define("super", superclass)
+	}
 
 	methods := map[string]*LoxFunction{}
 	for _, method := range stmt.Methods {
@@ -162,9 +183,15 @@ func (i *Interpreter) VisitClassStmt(stmt *ClassStmt) (interface{}, *RuntimeErro
 	}
 
 	class := &LoxClass{
-		Name:    stmt.Name.Lexeme,
-		Methods: methods,
+		Name:       stmt.Name.Lexeme,
+		Superclass: superclass,
+		Methods:    methods,
 	}
+
+	if superclass != nil {
+		i.Environment = i.Environment.Enclosing
+	}
+
 	i.Environment.assign(stmt.Name, class)
 	return nil, nil
 }
@@ -408,6 +435,30 @@ func (i *Interpreter) VisitThisExpr(expr *ThisExpr) (interface{}, *RuntimeError)
 	return i.lookupVariable(expr.Keyword, expr)
 }
 
+func (i *Interpreter) VisitSuperExpr(expr *SuperExpr) (interface{}, *RuntimeError) {
+	distance := i.Locals[expr]
+	superclassInterface, err := i.Environment.getAt(distance, "super")
+	if err != nil {
+		return nil, err
+	}
+	superclass := superclassInterface.(*LoxClass)
+
+	instanceInterface, err := i.Environment.getAt(distance-1, "this")
+	if err != nil {
+		return nil, err
+	}
+	instance := instanceInterface.(*LoxInstance)
+
+	method, ok := superclass.findMethod(expr.Method.Lexeme)
+	if !ok {
+		return nil, &RuntimeError{
+			Token:   expr.Method,
+			Message: fmt.Sprintf("Undefined property '%s'.", expr.Method.Lexeme),
+		}
+	}
+	return method.bind(instance), nil
+}
+
 // Helpers
 
 func (i *Interpreter) execute(stmt Stmt) *RuntimeError {
@@ -487,10 +538,6 @@ func (i *Interpreter) stringify(val interface{}) string {
 
 	if fVal, ok := val.(float64); ok {
 		sVal := fmt.Sprintf("%f", fVal)
-		if matched, _ := regexp.MatchString("\\.0+$", sVal); matched {
-			sVal = strings.TrimRight(sVal, "0")
-			sVal = strings.TrimRight(sVal, ".")
-		}
 		return sVal
 	}
 
